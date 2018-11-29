@@ -1,16 +1,20 @@
 // Global Variables
+const PADDING = 10;
 
-var UI = null;
+const TITLE_TEXT_SIZE = 24;
+
+const DIGIT_CANVAS_SIZE = 400;
+const DIGIT_CANVAS_Y = PADDING + TITLE_TEXT_SIZE + PADDING;
+
 var DIGIT_CANVAS = null;
+
+var PREDICTIONS = {};
 
 // Configuration
 var CONFIG = {
-  epochs: 5,
+  epochs: 1,
   batchSize: 320,
-  validationSplit: 0.15,
-  digitCanvasSize: 400,
-  digitCanvasX: 0,
-  digitCanvasY: 0
+  validationSplit: 0.15
 };
 
 /*************** MACHINE LEARNING  ***********/
@@ -90,7 +94,7 @@ function createDenseModel() {
 
 async function trainModel() {
   // MODEL = createDenseModel();
-  MODEL = createConvModel();
+  MODEL = createDenseModel();
 
   const learningRate = 0.01;
 
@@ -163,16 +167,17 @@ async function trainModel() {
   );
 }
 
-async function inferModel(data) {
+function inferModel(data) {
   let inputs = tf.tensor4d(data, [1, 28, 28, 1]);
   // tf.tidy(() => {
   const output = MODEL.predict(inputs);
   const axis = 1;
-  const predictions = Array.from(output.argMax(axis).dataSync());
-  console.log(predictions);
+  const prediction = Array.from(output.argMax(axis).dataSync())[0];
+  const distribution = output.dataSync();
   // });
   inputs.dispose();
-  return predictions;
+  output.dispose();
+  return { prediction, distribution };
 }
 
 async function loadAndTrain() {
@@ -186,62 +191,80 @@ async function setup() {
   setupCanvas();
 }
 
+function resetDigitCanvas() {
+  DIGIT_CANVAS.background(0);
+  DIGIT_CANVAS.fill(255);
+  DIGIT_CANVAS.stroke(255);
+}
+
 function setupCanvas() {
   frameRate(60);
   createCanvas(windowWidth, windowHeight);
   // Handling issues with retina screens, forcce pixel density to 1
   pixelDensity(1);
 
-  // UI = new LayoutVertical(10).add(
-  //   new Title("Mnist", 0, 0, windowWidth, 24)
-  // );
-  // .add(new DrawArea(0, 0, 400, 400));
-
   // This is a place to store where the user is drawing
-  DIGIT_CANVAS = createGraphics(CONFIG.digitCanvasSize, CONFIG.digitCanvasSize);
-  DIGIT_CANVAS.background(0);
-  DIGIT_CANVAS.fill(255);
-  DIGIT_CANVAS.stroke(255);
+  DIGIT_CANVAS = createGraphics(DIGIT_CANVAS_SIZE, DIGIT_CANVAS_SIZE);
+  resetDigitCanvas();
+
+  // Setup the buttons
+  const BUTTON_Y = DIGIT_CANVAS_SIZE + DIGIT_CANVAS_Y + PADDING;
 
   var trainBtn = createButton("Train");
   trainBtn.class("btn-secondary");
-  trainBtn.position(20, CONFIG.digitCanvasSize + 20);
+  trainBtn.position(PADDING, BUTTON_Y);
   trainBtn.mousePressed(loadAndTrain);
 
   var checkBtn = createButton("Check");
   checkBtn.class("btn-success");
-  checkBtn.position(20 + 100, CONFIG.digitCanvasSize + 20);
+  checkBtn.position(PADDING + 80, BUTTON_Y);
   checkBtn.mousePressed(predictDigit);
 
   var resetBtn = createButton("Reset");
   resetBtn.class("btn-danger");
-  resetBtn.position(20 + 200, CONFIG.digitCanvasSize + 20);
-  resetBtn.mousePressed(_ => {
-    console.log("jere");
-    DIGIT_CANVAS.background(0);
-    DIGIT_CANVAS.fill(255);
-    DIGIT_CANVAS.stroke(255);
-  });
+  resetBtn.position(PADDING + 170, BUTTON_Y);
+  resetBtn.mousePressed(resetDigitCanvas);
 }
 
 function draw() {
   background(50);
-  image(DIGIT_CANVAS, 0, 0);
 
-  // Title
-  // LAYOUT.draw();
+  // Draw Title
+  push();
+  translate(PADDING, PADDING);
+  fill(255)
+    .strokeWeight(0)
+    .textSize(16)
+    .textFont("Helvetica", 24);
+  text("MNIST", 0, 24);
+  pop();
 
-  // Move 10 down
+  // Draw Digit
+  image(DIGIT_CANVAS, PADDING, PADDING + 24 + PADDING);
+
+  // Buttons already drawn
+  // Array(10)
+  // .fill()
+  // .map(Math.random),
+  // Draw results
+  push();
+  translate(0, PADDING + 24 + PADDING + DIGIT_CANVAS_SIZE + 100);
+  let p = new Preditions(PREDICTIONS);
+  p.draw();
+  pop();
 }
 
 // When the mouse is dragged, draw onto the user pixels
 function touchMoved() {
   // Only if the user drags within the user pixels area
 
-  let { digitCanvasX: x, digitCanvasY: y, digitCanvasSize: w } = CONFIG;
+  const x = PADDING;
+  const y = PADDING + 24 + PADDING;
+  const w = DIGIT_CANVAS_SIZE;
+
   if (mouseX > x && mouseY > y && mouseX < x + w && mouseY < y + w) {
     // Draw a white circle
-    DIGIT_CANVAS.ellipse(mouseX - x, mouseY - y, 32, 32);
+    DIGIT_CANVAS.ellipse(mouseX - x, mouseY - y, 16, 16);
   }
 }
 
@@ -275,5 +298,6 @@ async function predictDigit() {
   }
   console.log(inputs);
   // Get predictions based on that image
-  let prediction = inferModel(inputs);
+  PREDICTIONS = inferModel(inputs);
+  console.log(PREDICTIONS);
 }
