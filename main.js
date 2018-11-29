@@ -9,10 +9,11 @@ const DIGIT_CANVAS_Y = PADDING + TITLE_TEXT_SIZE + PADDING;
 var DIGIT_CANVAS = null;
 
 var PREDICTION_UI = null;
+var PROGRESS_UI = null;
 
 // Configuration
 var CONFIG = {
-  epochs: 1,
+  epochs: 10,
   batchSize: 320,
   validationSplit: 0.15
 };
@@ -22,6 +23,7 @@ var MODEL = null;
 var DATA = null;
 
 async function loadData() {
+  PROGRESS_UI.setStatus(`Loading...`);
   DATA = new MnistData();
   await DATA.load();
 }
@@ -142,9 +144,15 @@ async function trainModel() {
     callbacks: {
       onBatchEnd: async (batch, logs) => {
         trainBatchCount++;
+        let percentComplete = (
+          (trainBatchCount / totalNumBatches) *
+          100
+        ).toFixed(1);
+        PROGRESS_UI.setProgress(percentComplete);
+        PROGRESS_UI.setStatus(`ACC ${logs.acc.toFixed(3)}`);
         console.log(
           `Training... (` +
-            `${((trainBatchCount / totalNumBatches) * 100).toFixed(1)}%` +
+            `${percentComplete}%` +
             ` complete). To stop training, refresh or close page.`
         );
         await tf.nextFrame();
@@ -152,6 +160,7 @@ async function trainModel() {
       onEpochEnd: async (epoch, logs) => {
         valAcc = logs.val_acc;
         console.log(`Accuracy: ${valAcc}`);
+        PROGRESS_UI.setStatus(`*ACC ${logs.val_acc.toFixed(3)}`);
         await tf.nextFrame();
       }
     }
@@ -199,12 +208,14 @@ function resetDigitCanvas() {
 }
 
 function setupCanvas() {
+  textFont("Neucha", 16);
   frameRate(60);
   createCanvas(windowWidth, windowHeight);
   // Handling issues with retina screens, forcce pixel density to 1
   pixelDensity(1);
 
   PREDICTION_UI = new Preditions();
+  PROGRESS_UI = new ProgressBar(110);
 
   // This is a place to store where the user is drawing
   DIGIT_CANVAS = createGraphics(DIGIT_CANVAS_SIZE, DIGIT_CANVAS_SIZE);
@@ -238,28 +249,20 @@ function draw() {
     .textSize(16)
     .textFont("Neucha", 24);
   text("MNIST", PADDING + 5, Y + 24);
-  Y = PADDING + 24 + PADDING * 2;
 
   // Draw Progress
+  push();
+  translate(300, Y);
+  PROGRESS_UI.draw();
+  pop();
+
+  Y = PADDING + 24 + PADDING * 2;
 
   // Draw Digit
   image(DIGIT_CANVAS, PADDING, Y);
   Y = Y + DIGIT_CANVAS_SIZE + PADDING;
 
-  // Buttons already drawn
-  // Y = Y + 100 + PADDING;
-  // Array(10)
-  // .fill()
-  // .map(Math.random),
-
-  // Draw results
-  // push();
-  // translate(0, Y);
-  // let bar = new ProgressBar();
-  // // bar.draw();
-  // pop();
-  // Y = Y + 50 + PADDING;
-
+  // Draw predictions chart
   push();
   translate(0, Y);
   PREDICTION_UI.draw();

@@ -73,18 +73,41 @@ class DrawArea extends Panel {
 }
 
 class ProgressBar {
-  constructor(status, percentage, width) {
-    this.status = status;
-    this.percentage = percentage;
+  constructor(width) {
+    this.status = "Press Train";
+    this.percentage = 0;
     this.width = width;
+  }
+
+  setProgress(percentage) {
+    this.percentage = percentage;
+  }
+
+  setStatus(status) {
+    this.status = status;
   }
 
   draw() {
     // Gray line full width
-    // White line %age width
     strokeCap(SQUARE);
-    strokeWeight(20);
-    line(0, 0, 0, this.width);
+    strokeWeight(10);
+    stroke(100);
+    line(0, 30, this.width, 30);
+
+    // White line %age width
+    stroke(255);
+    strokeWeight(10);
+    let completeWidth = map(this.percentage, 0, 100, 0, this.width);
+    line(0, 30, completeWidth, 30);
+
+    // Status text
+    // if (this.percentage === 0) {
+    noStroke();
+    textSize(24);
+    text(this.status, 0, 15);
+    // } else if (this.percentage === 100) {
+
+    // }
   }
 }
 
@@ -114,8 +137,8 @@ class Preditions {
       let x = (i + 1) * (this.width + this.gap);
 
       if (i == this.prediction) {
-        fill("red");
-        stroke("red");
+        fill("#86a361");
+        stroke("#86a361");
       } else {
         fill(255);
         stroke(255);
@@ -124,9 +147,8 @@ class Preditions {
       // Labels
       push();
       strokeWeight(0);
-      textSize(12);
-      textFont("Neucha", 16);
-      text(i, x - 5, 120);
+      textSize(24);
+      text(i, x - 5, 125);
       pop();
 
       // Lines
