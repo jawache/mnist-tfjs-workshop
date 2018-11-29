@@ -72,13 +72,38 @@ class DrawArea extends Panel {
   }
 }
 
+class ProgressBar {
+  constructor(status, percentage, width) {
+    this.status = status;
+    this.percentage = percentage;
+    this.width = width;
+  }
+
+  draw() {
+    // Gray line full width
+    // White line %age width
+    strokeCap(SQUARE);
+    strokeWeight(20);
+    line(0, 0, 0, this.width);
+  }
+}
+
 class Preditions {
-  constructor({ distribution = [], prediction = null }) {
-    this.distribution = distribution;
-    this.prediction = prediction;
+  constructor(data) {
     this.maxheight = 100;
     this.width = 20;
     this.gap = 20;
+    this.reset();
+  }
+
+  setData(data) {
+    this.distribution = data.distribution;
+    this.prediction = data.prediction;
+  }
+
+  reset() {
+    this.distribution = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    this.prediction = -1;
   }
 
   draw() {
@@ -100,7 +125,7 @@ class Preditions {
       push();
       strokeWeight(0);
       textSize(12);
-      textFont("Courier", 16);
+      textFont("Neucha", 16);
       text(i, x - 5, 120);
       pop();
 

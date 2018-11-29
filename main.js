@@ -8,7 +8,7 @@ const DIGIT_CANVAS_Y = PADDING + TITLE_TEXT_SIZE + PADDING;
 
 var DIGIT_CANVAS = null;
 
-var PREDICTIONS = {};
+var PREDICTION_UI = null;
 
 // Configuration
 var CONFIG = {
@@ -195,6 +195,7 @@ function resetDigitCanvas() {
   DIGIT_CANVAS.background(0);
   DIGIT_CANVAS.fill(255);
   DIGIT_CANVAS.stroke(255);
+  PREDICTION_UI.reset();
 }
 
 function setupCanvas() {
@@ -203,54 +204,65 @@ function setupCanvas() {
   // Handling issues with retina screens, forcce pixel density to 1
   pixelDensity(1);
 
+  PREDICTION_UI = new Preditions();
+
   // This is a place to store where the user is drawing
   DIGIT_CANVAS = createGraphics(DIGIT_CANVAS_SIZE, DIGIT_CANVAS_SIZE);
   resetDigitCanvas();
 
   // Setup the buttons
-  const BUTTON_Y = DIGIT_CANVAS_SIZE + DIGIT_CANVAS_Y + PADDING;
-
   var trainBtn = createButton("Train");
-  trainBtn.class("btn-secondary");
-  trainBtn.position(PADDING, BUTTON_Y);
+  trainBtn.class("btn-secondary btn-small");
+  trainBtn.position(100, 5);
   trainBtn.mousePressed(loadAndTrain);
 
   var checkBtn = createButton("Check");
-  checkBtn.class("btn-success");
-  checkBtn.position(PADDING + 80, BUTTON_Y);
+  checkBtn.class("btn-success btn-small");
+  checkBtn.position(100 + 60, 5);
   checkBtn.mousePressed(predictDigit);
 
   var resetBtn = createButton("Reset");
-  resetBtn.class("btn-danger");
-  resetBtn.position(PADDING + 170, BUTTON_Y);
+  resetBtn.class("btn-danger btn-small");
+  resetBtn.position(100 + 127, 5);
   resetBtn.mousePressed(resetDigitCanvas);
 }
 
 function draw() {
   background(50);
 
+  let Y = PADDING;
+
   // Draw Title
-  push();
-  translate(PADDING, PADDING);
   fill(255)
     .strokeWeight(0)
     .textSize(16)
-    .textFont("Helvetica", 24);
-  text("MNIST", 0, 24);
-  pop();
+    .textFont("Neucha", 24);
+  text("MNIST", PADDING + 5, Y + 24);
+  Y = PADDING + 24 + PADDING * 2;
+
+  // Draw Progress
 
   // Draw Digit
-  image(DIGIT_CANVAS, PADDING, PADDING + 24 + PADDING);
+  image(DIGIT_CANVAS, PADDING, Y);
+  Y = Y + DIGIT_CANVAS_SIZE + PADDING;
 
   // Buttons already drawn
+  // Y = Y + 100 + PADDING;
   // Array(10)
   // .fill()
   // .map(Math.random),
+
   // Draw results
+  // push();
+  // translate(0, Y);
+  // let bar = new ProgressBar();
+  // // bar.draw();
+  // pop();
+  // Y = Y + 50 + PADDING;
+
   push();
-  translate(0, PADDING + 24 + PADDING + DIGIT_CANVAS_SIZE + 100);
-  let p = new Preditions(PREDICTIONS);
-  p.draw();
+  translate(0, Y);
+  PREDICTION_UI.draw();
   pop();
 }
 
@@ -264,7 +276,7 @@ function touchMoved() {
 
   if (mouseX > x && mouseY > y && mouseX < x + w && mouseY < y + w) {
     // Draw a white circle
-    DIGIT_CANVAS.ellipse(mouseX - x, mouseY - y, 16, 16);
+    DIGIT_CANVAS.ellipse(mouseX - x, mouseY - y, 24, 24);
   }
 }
 
@@ -298,6 +310,7 @@ async function predictDigit() {
   }
   console.log(inputs);
   // Get predictions based on that image
-  PREDICTIONS = inferModel(inputs);
-  console.log(PREDICTIONS);
+  let data = inferModel(inputs);
+  PREDICTION_UI.setData(data);
+  console.log(data);
 }
