@@ -55,6 +55,12 @@ async function loadAndTrain() {
   await trainModel();
 }
 
+/*************** HELPER FUNCTIONS ***********/
+
+// A utility function that returns the number of batches for a given dataset of xs
+const getNumBatches = xs =>
+  Math.ceil((xs.shape[0] * (1 - VALIDATION_SPLIT)) / BATCH_SIZE) * EPOCHS;
+
 /*************** USER INTERFACE ***********/
 async function setup() {
   console.log("👉 Setup");
